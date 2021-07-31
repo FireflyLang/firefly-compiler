@@ -28,16 +28,12 @@ package io.github.fireflylang.compiler.parser
 
 import io.github.fireflylang.compiler.FireflyDeclaredUnit
 import io.github.fireflylang.compiler.FireflyUnit
-import io.github.fireflylang.compiler.errors.Error
 import io.github.fireflylang.compiler.errors.ErrorReport
 import io.github.fireflylang.compiler.grammar.FireflyLangLexer
 import io.github.fireflylang.compiler.grammar.FireflyLangParser
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
-import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.tree.ParseTreeWalker
-import java.nio.channels.ReadableByteChannel
 
 fun parse(
     unit: FireflyUnit,
@@ -50,7 +46,7 @@ fun parse(
     val parser = FireflyLangParser(tokenStream)
     //parser.addParseListener(AntlrListener())
     val walker = ParseTreeWalker()
-    val listener = FireflyLangListener(unit, unitChannel, errorReport)
+    val listener = FireflyLangAstTranslatorListener(unit, unitChannel, errorReport)
     walker.walk(listener, parser.unit())
 
 }

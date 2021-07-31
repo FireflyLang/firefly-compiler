@@ -1,0 +1,14 @@
+[book]
+authors = ["JonathanxD", "FireflyLang"]
+language = "en"
+multilingual = false
+src = "book/src"
+title = "Firefly Lang Compiler Book"
+
+[build]
+build-dir = "docs"
+
+[output.html]
+mathjax-support = true
+default-theme = "navy"
+edit-url-template = "https://github.com/FireflyLang/firefly-compiler/edit/main/book/{path}"

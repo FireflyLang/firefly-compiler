@@ -43,7 +43,7 @@ import java.util.*
 import io.github.fireflylang.compiler.errors.Error
 import io.github.fireflylang.compiler.errors.ErrorReport
 
-class FireflyLangListener(
+class FireflyLangAstTranslatorListener(
     val unit: FireflyUnit,
     val publishChannel: SendChannel<FireflyDeclaredUnit>,
     val errorReport: ErrorReport
