@@ -1,0 +1,8 @@
+test.firefly
+build/
+*.ipr
+*.iws
+*.class
+.idea/
+.gradle/
+out/
