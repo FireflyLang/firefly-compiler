@@ -32,7 +32,12 @@ arguments : argument (',' argument)*;
 argument : expression;
 
 expressions : expression ((';'? expression)* | ('\n' expression)* | '\n') ;
-expression : literal | invokeFunc ;
+expression : literal | invokeFunc | fnDeclaration ;
+
+fnDeclaration :
+    'fn ' identifier '(' ')' (' '*) '{'
+        expressions
+     '}' ;
 
 identifier : ID;
 
@@ -324,5 +329,7 @@ UnicodeEscape
 NullLiteral
 	: 'null'
 	;
+
+SPACE : ' ' -> channel(HIDDEN) ;
 
 ID : [A-Za-z0-9_+\-*&^%$#@!:;.,/\\|`~"'<>[\]]+;
