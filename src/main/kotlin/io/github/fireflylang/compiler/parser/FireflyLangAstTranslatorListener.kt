@@ -42,6 +42,8 @@ import mu.KotlinLogging
 import java.util.*
 import io.github.fireflylang.compiler.errors.Error
 import io.github.fireflylang.compiler.errors.ErrorReport
+import io.github.fireflylang.compiler.global.GlobalInlineFunctions
+import io.github.fireflylang.compiler.inliner.StandardFunctionInliner
 
 class FireflyLangAstTranslatorListener(
     val unit: FireflyUnit,
@@ -49,6 +51,7 @@ class FireflyLangAstTranslatorListener(
     val errorReport: ErrorReport
 ) : FireflyLangBaseListener() {
     private val logger = KotlinLogging.logger("FireflyLangListener")
+    private val inliner = StandardFunctionInliner()
 
     private val stack = Stack<TypedData>().also {
         it.push(TypedData())
@@ -70,35 +73,38 @@ class FireflyLangAstTranslatorListener(
 
     override fun enterInvokeFunc(ctx: FireflyLangParser.InvokeFuncContext) {
         val id = ctx.identifier().ID().toString()
-        if (id == "println") {
-            val source = CURRENT_SOURCE.require(this.currentData())
+        val inline = GlobalInlineFunctions.isGlobal(id)
+
+        if (inline) {
             val next = pushData()
             CURRENT_INSTRUCTIONS.set(next, mutableListOf())
         }
+
         logger.info { "Entered invocation id: $id" }
     }
 
     override fun exitInvokeFunc(ctx: FireflyLangParser.InvokeFuncContext) {
         val id = ctx.identifier().ID().toString()
-        if (id == "println") {
+        val inline = GlobalInlineFunctions.isGlobal(id)
+        if (inline) {
             val prev = popData()
             val args = CURRENT_INSTRUCTIONS.require(prev)
             if (CURRENT_SOURCE.contains(this.currentData())) {
                 val source = CURRENT_SOURCE.require(this.currentData())
-
-                source.add(
-                    invokePrintln2(
-                        args.map { it.type },
-                        args
-                    )
-                )
+                val inlinedFunction = GlobalInlineFunctions.resolveInlinedFunction(
+                    id,
+                    args.map { it.type }
+                )!!
+                val inlinedInstructions = inliner.inline(args, inlinedFunction)
+                source.addAll(inlinedInstructions)
             } else {
-                CURRENT_INSTRUCTIONS.require(prev).add(
-                    invokePrintln2(
-                        args.map { it.type },
-                        args
-                    )
-                )
+                val inlinedFunction = GlobalInlineFunctions.resolveInlinedFunction(
+                    id,
+                    args.map { it.type }
+                )!!
+                val inlinedInstructions = inliner.inline(args, inlinedFunction)
+
+                CURRENT_INSTRUCTIONS.require(prev).addAll(inlinedInstructions)
             }
         }
         logger.info { "Exited invocation id: $id" }

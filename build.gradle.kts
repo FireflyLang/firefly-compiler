@@ -69,5 +69,5 @@ tasks.withType<nl.javadude.gradle.plugins.license.License> {
     header = rootProject.file("LICENSE_HEADER")
     strictCheck = true
     mapping("g4", "JAVADOC_STYLE")
-    //exclude { !it.path.startsWith("$buildDir/generated-src") }
+    exclude { !it.path.startsWith("$buildDir/generated-src") }
 }

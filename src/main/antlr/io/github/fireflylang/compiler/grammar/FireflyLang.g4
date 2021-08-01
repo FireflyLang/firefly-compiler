@@ -31,7 +31,7 @@ invokeFunc : identifier '(' (arguments*) ')';
 arguments : argument (',' argument)*;
 argument : expression;
 
-expressions : expression ((';' expression)* | '\n') ;
+expressions : expression ((';' expression)* | ('\n' expression)* | '\n') ;
 expression : literal | invokeFunc ;
 
 identifier : ID;

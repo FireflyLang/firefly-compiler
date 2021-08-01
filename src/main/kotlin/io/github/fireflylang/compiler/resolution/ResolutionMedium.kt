@@ -24,24 +24,22 @@
  *      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *      THE SOFTWARE.
  */
-package io.github.fireflylang.compiler.ast
+package io.github.fireflylang.compiler.resolution
 
-import com.github.jonathanxd.kores.Instruction
-import com.github.jonathanxd.kores.base.Access
-import com.github.jonathanxd.kores.base.FieldAccess
-import com.github.jonathanxd.kores.type.typeOf
-import java.io.PrintStream
+import com.github.jonathanxd.kores.base.MethodDeclaration
+import com.github.jonathanxd.kores.common.MethodSpec
 
-fun accessSystemOut() = FieldAccess.Builder.builder()
-    .localization(typeOf<System>())
-    .name("out")
-    .type(typeOf<PrintStream>())
-    .target(Access.STATIC)
-    .build()
+class ResolutionMedium {
+    private val resolutionTable = ResolutionTable()
+    private val classPathResolution = ClassPathResolution()
 
-fun accessSystemErr() = FieldAccess.Builder.builder()
-    .localization(typeOf<System>())
-    .name("err")
-    .type(typeOf<PrintStream>())
-    .target(Access.STATIC)
-    .build()
+    suspend fun lookupFor(
+        location: String,
+        signature: MethodSpec
+    ): MethodDeclaration? =
+        classPathResolution.lookupFor(location, signature) ?: resolutionTable.lookupFor(location, signature)
+
+    suspend fun registerResolvedMethodDeclaration(resolved: ResolvedMethodDeclaration) {
+        this.resolutionTable.registerResolvedMethodDeclaration(resolved)
+    }
+}

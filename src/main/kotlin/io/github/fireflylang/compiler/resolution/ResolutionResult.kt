@@ -24,24 +24,8 @@
  *      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *      THE SOFTWARE.
  */
-package io.github.fireflylang.compiler.ast
+package io.github.fireflylang.compiler.resolution
 
-import com.github.jonathanxd.kores.Instruction
-import com.github.jonathanxd.kores.base.Access
-import com.github.jonathanxd.kores.base.FieldAccess
-import com.github.jonathanxd.kores.type.typeOf
-import java.io.PrintStream
-
-fun accessSystemOut() = FieldAccess.Builder.builder()
-    .localization(typeOf<System>())
-    .name("out")
-    .type(typeOf<PrintStream>())
-    .target(Access.STATIC)
-    .build()
-
-fun accessSystemErr() = FieldAccess.Builder.builder()
-    .localization(typeOf<System>())
-    .name("err")
-    .type(typeOf<PrintStream>())
-    .target(Access.STATIC)
-    .build()
+sealed class ResolutionResult<T>
+class ResolutionEnd<T> : ResolutionResult<T>()
+data class ResolvedValue<T>(val value: T): ResolutionResult<T>()

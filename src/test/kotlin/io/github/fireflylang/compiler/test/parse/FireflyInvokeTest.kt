@@ -27,6 +27,7 @@
 package io.github.fireflylang.compiler.test.parse
 
 import com.github.jonathanxd.kores.bytecode.classloader.CodeClassLoader
+import com.github.jonathanxd.kores.bytecode.util.save
 import io.github.fireflylang.compiler.FireflyCompilationGun
 import io.github.fireflylang.compiler.FireflyCompiledUnit
 import io.github.fireflylang.compiler.FireflyUnit
@@ -37,6 +38,8 @@ import io.kotest.core.spec.style.FunSpec
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
@@ -68,6 +71,43 @@ class FireflyInvokeTest : FunSpec({
         val result = compile.compileSingleUnit(simplePrintlnHelloWorldInvocation)
         val end = Instant.now()
         val loader = CodeClassLoader()
+        val clazz = loader.define(result.compilationResult)
+        println(clazz)
+        println(clazz.declaredMethods.contentToString())
+        val ep = clazz.getDeclaredMethod("entrypoint", Array<String>::class.java)
+        ep.invoke(null, arrayOf<String>())
+        println("Compilation took ${Duration.between(start, end)}")
+    }
+
+    test("simple println hello world error invocation") {
+        val compile = FireflyCompilationGun()
+        val start = Instant.now()
+        val result = compile.compileSingleUnit(simpleEPrintlnHelloWorldInvocation)
+        val end = Instant.now()
+        val loader = CodeClassLoader()
+        val clazz = loader.define(result.compilationResult)
+        println(clazz)
+        println(clazz.declaredMethods.contentToString())
+        val ep = clazz.getDeclaredMethod("entrypoint", Array<String>::class.java)
+        ep.invoke(null, arrayOf<String>())
+        println("Compilation took ${Duration.between(start, end)}")
+    }
+
+    test("simple println hello world error 2x invocation") {
+        val compile = FireflyCompilationGun()
+        val start = Instant.now()
+        val result = compile.compileSingleUnit(simpleEPrintlnHelloWorld2xInvocation)
+        val end = Instant.now()
+        val loader = CodeClassLoader()
+        val generatedClasses = Paths.get("generated-classes")
+        Files.createDirectories(generatedClasses)
+        result.compilationResult.forEach {
+            it.save(
+                generatedClasses,
+                true,
+                true
+            )
+        }
         val clazz = loader.define(result.compilationResult)
         println(clazz)
         println(clazz.declaredMethods.contentToString())

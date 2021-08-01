@@ -24,24 +24,38 @@
  *      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *      THE SOFTWARE.
  */
-package io.github.fireflylang.compiler.ast
+package io.github.fireflylang.compiler.global
 
-import com.github.jonathanxd.kores.Instruction
-import com.github.jonathanxd.kores.base.Access
-import com.github.jonathanxd.kores.base.FieldAccess
-import com.github.jonathanxd.kores.type.typeOf
-import java.io.PrintStream
+import com.github.jonathanxd.kores.base.MethodDeclaration
+import io.github.fireflylang.compiler.ast.Import
+import io.github.fireflylang.compiler.ast.ImportType
+import io.github.fireflylang.compiler.ast.Imports
 
-fun accessSystemOut() = FieldAccess.Builder.builder()
-    .localization(typeOf<System>())
-    .name("out")
-    .type(typeOf<PrintStream>())
-    .target(Access.STATIC)
-    .build()
+/**
+ * Resolve global symbols, such as `print`, `eprint`, `println`, `eprintln`, `read`, `readln`, and other
+ * globally available functions, variables and types.
+ */
+object GlobalResolution {
 
-fun accessSystemErr() = FieldAccess.Builder.builder()
-    .localization(typeOf<System>())
-    .name("err")
-    .type(typeOf<PrintStream>())
-    .target(Access.STATIC)
-    .build()
+    private val globalImports = Imports(
+        Import(
+            path = "io.github.fireflylang.Std.Primitives",
+            units = listOf("Character", "Double", "Byte", "Char", "Int", "Decimal", "Unit"),
+            type = ImportType.NAMESPACE
+        ),
+        Import(
+            path = "io.github.fireflylang.Std",
+            units = listOf("String", "print", "eprint", "println", "eprintln", "read", "readln"),
+            type = ImportType.NAMESPACE
+        )
+    )
+
+
+
+    /**
+     *
+     */
+    class Inline {
+
+    }
+}

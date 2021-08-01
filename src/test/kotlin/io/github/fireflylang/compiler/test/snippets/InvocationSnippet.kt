@@ -69,6 +69,31 @@ val simplePrintlnHelloWorldInvocation =
         }
     )
 
+val simpleEPrintlnHelloWorldInvocation =
+    createUnit(
+        fileName = "SimpleInvocation.firefly",
+        contentStream = {
+            CharStreams.fromString(
+                """
+                eprintln("Hello world")
+            """.trimIndent()
+            )
+        }
+    )
+
+val simpleEPrintlnHelloWorld2xInvocation =
+    createUnit(
+        fileName = "SimpleInvocation.firefly",
+        contentStream = {
+            CharStreams.fromString(
+                """
+                eprintln("Hello world")
+                eprintln("Nice world")
+            """.trimIndent()
+            )
+        }
+    )
+
 val simplePlusInvocation =
     createUnit(
         fileName = "SimpleInvocation.firefly",
