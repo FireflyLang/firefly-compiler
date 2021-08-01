@@ -31,7 +31,7 @@ invokeFunc : identifier '(' (arguments*) ')';
 arguments : argument (',' argument)*;
 argument : expression;
 
-expressions : expression ((';' expression)* | ('\n' expression)* | '\n') ;
+expressions : expression ((';'? expression)* | ('\n' expression)* | '\n') ;
 expression : literal | invokeFunc ;
 
 identifier : ID;
@@ -44,6 +44,8 @@ literal
 	|	StringLiteral
 	|	NullLiteral
 	;
+
+LF : '\n' -> channel(HIDDEN) ;
 
 WS
     : [\u0020\u0009\u000C]

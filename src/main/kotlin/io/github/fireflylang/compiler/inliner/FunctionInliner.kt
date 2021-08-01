@@ -60,6 +60,9 @@ interface FunctionInliner {
  * using `*load` offsets? It looks appropriate to me.
  * Or we store `MethodDeclaration` compressed in the class? It provides a more powerful way to do inlining and
  * manipulation without needing to mix ASM and **Kores AST**.
+ *
+ * Other possibility is to store the original source code of the function (this is a better approach), so firefly-compiler
+ * only need to parse the source code of the function and rebuild its structure, and then apply inlining.
  */
 class StandardFunctionInliner: FunctionInliner {
     private val counterVisitorManager = OptimizeVisitorManager<Instruction>()
