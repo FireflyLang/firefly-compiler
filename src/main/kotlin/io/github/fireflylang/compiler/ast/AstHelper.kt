@@ -59,7 +59,7 @@ fun createConstructors(unit: FireflyUnit, data: TypedData): List<ConstructorDecl
 
 fun createMethods(unit: FireflyUnit, data: TypedData): List<MethodDeclaration> =
     if (unit.unitType == UnitType.UNIT) {
-        listOf(createEntrypointMethod(unit, data))
+        mutableListOf(createEntrypointMethod(unit, data))
     } else {
         emptyList()
     }

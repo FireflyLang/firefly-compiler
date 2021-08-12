@@ -24,29 +24,14 @@
  *      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *      THE SOFTWARE.
  */
-package io.github.fireflylang.compiler.parser
+package io.github.fireflylang.compiler.resolution
 
-import io.github.fireflylang.compiler.FireflyDeclaredUnit
+import com.github.jonathanxd.kores.base.MethodDeclaration
+import com.github.jonathanxd.kores.base.Named
 import io.github.fireflylang.compiler.FireflyUnit
-import io.github.fireflylang.compiler.errors.ErrorReport
-import io.github.fireflylang.compiler.grammar.FireflyLangLexer
-import io.github.fireflylang.compiler.grammar.FireflyLangParser
-import kotlinx.coroutines.channels.SendChannel
-import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.tree.ParseTreeWalker
 
-fun parse(
-    unit: FireflyUnit,
-    unitChannel: SendChannel<FireflyDeclaredUnit>,
-    ctx: ParseContext
-) {
-    val name = unit.fileName
-    val lexer = FireflyLangLexer(unit.contentStream())
-    val tokenStream = CommonTokenStream(lexer)
-    val parser = FireflyLangParser(tokenStream)
-    //parser.addParseListener(AntlrListener())
-    val walker = ParseTreeWalker()
-    val listener = FireflyLangAstTranslatorListener(unit, ctx, unitChannel)
-    walker.walk(listener, parser.unit())
-
-}
+data class ResolvedDeclaration<T: Named>(
+    val type: String,
+    val unit: FireflyUnit,
+    val declaration: T
+)

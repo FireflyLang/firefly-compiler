@@ -26,20 +26,30 @@
  */
 grammar FireflyLang;
 
-unit : expressions ;
+unit : imports? expressions ;
+imports : importStm ((';')|('\n') importStm)*;
+importStm : 'import' ID (importAlias | namespaceSubImport)?;
+importAlias : 'as' ID;
+namespaceSubImport : '[' subImports ']';
+subImports : ID (',' ID)*;
+
 invokeFunc : identifier '(' (arguments*) ')';
 arguments : argument (',' argument)*;
 argument : expression;
+
+parameters : parameter (',' parameter)*;
+parameter : ID (':' ' '* type)? ('=' expression)?;
 
 expressions : expression ((';'? expression)* | ('\n' expression)* | '\n') ;
 expression : literal | invokeFunc | fnDeclaration ;
 
 fnDeclaration :
-    'fn ' identifier '(' ')' (' '*) '{'
+    'fn ' identifier ('(' parameters? ')')? (' '*) '{'
         expressions
      '}' ;
 
 identifier : ID;
+type : ID;
 
 literal
 	:	IntegerLiteral
@@ -332,4 +342,11 @@ NullLiteral
 
 SPACE : ' ' -> channel(HIDDEN) ;
 
-ID : [A-Za-z0-9_+\-*&^%$#@!:;.,/\\|`~"'<>[\]]+;
+ID : SIMPLE_ID | MAGIC_ID ;
+SIMPLE_ID : [A-Za-z0-9_+\-*&^%$#@!.,]+;
+MAGIC_ID : '`' [A-Za-z0-9_+\-*&^%$#@!:;.,/\\|~"'<>[\]]+ '`' ;
+//REGULAR_ID : [A-Za-z0-9_+\-*&^%$#@!]+;
+//MAGIC_ID : [A-Za-z0-9_+\-*&^%$#@!:;.,/\\|`~"'<>[\]]+;
+SPECIAL : [:;.,/\\|`~"'<>[\]]+;
+
+// name./()

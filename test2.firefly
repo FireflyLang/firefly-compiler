@@ -1,0 +1,6 @@
+fn hello() {
+    println("Hello world")
+}
+fn greet(text: String) {
+    println("Hello world")
+}

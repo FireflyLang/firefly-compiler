@@ -29,6 +29,7 @@ package io.github.fireflylang.compiler
 import io.github.fireflylang.compiler.errors.Error
 import io.github.fireflylang.compiler.errors.ErrorReport
 import io.github.fireflylang.compiler.parser.FireflyParser
+import io.github.fireflylang.compiler.parser.ParseContext
 import io.github.fireflylang.compiler.parser.parse
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -44,17 +45,17 @@ class FireflyCompilationGun {
     fun compile(units: Channel<FireflyUnit>): Channel<FireflyCompiledUnit> {
         val unitChannel = Channel<FireflyDeclaredUnit>()
         val compilationResultChannel = Channel<FireflyCompiledUnit>()
-        val errorReport = ErrorReport()
-        val parser = FireflyParser(units, unitChannel, errorReport)
+        val ctx = ParseContext()
+        val parser = FireflyParser(units, unitChannel, ctx)
         val compiler = FireflyCompiler(unitChannel, compilationResultChannel)
         val parserJob = parser.runParser()
         val compilationJob = compiler.runCompilation()
-        val errorReportJob = errorReport.runErrorReport()
+        val errorReportJob = ctx.errorReport.runErrorReport()
 
         CoroutineScope(Dispatchers.IO).launch {
             parserJob.join()
             compilationJob.join()
-            errorReport.channel.close()
+            ctx.errorReport.channel.close()
             errorReportJob.join()
         }
         return compilationResultChannel
@@ -65,8 +66,8 @@ class FireflyCompilationGun {
         val receive = this.compile(channel)
         channel.send(unit)
 
-        val recv = receive.receive()
         channel.close()
+        val recv = receive.receive()
         return recv
     }
 

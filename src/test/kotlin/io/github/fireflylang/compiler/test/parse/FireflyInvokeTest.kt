@@ -32,6 +32,7 @@ import io.github.fireflylang.compiler.FireflyCompilationGun
 import io.github.fireflylang.compiler.FireflyCompiledUnit
 import io.github.fireflylang.compiler.FireflyUnit
 import io.github.fireflylang.compiler.errors.ErrorReport
+import io.github.fireflylang.compiler.parser.ParseContext
 import io.github.fireflylang.compiler.parser.parse
 import io.github.fireflylang.compiler.test.snippets.*
 import io.kotest.core.spec.style.FunSpec
@@ -46,10 +47,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 class FireflyInvokeTest : FunSpec({
     test("simple invocation") {
-        parse(simpleInvocation, Channel(10), ErrorReport())
+        parse(simpleInvocation, Channel(10), ParseContext())
     }
     test("simple plus invocation") {
-        parse(simplePlusInvocation, Channel(10), ErrorReport())
+        parse(simplePlusInvocation, Channel(10), ParseContext())
     }
     test("simple println invocation") {
         val compile = FireflyCompilationGun()

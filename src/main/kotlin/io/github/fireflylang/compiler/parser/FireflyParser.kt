@@ -44,7 +44,7 @@ import java.util.*
 class FireflyParser(
     val receiveChannel: ReceiveChannel<FireflyUnit>,
     val publishChannel: SendChannel<FireflyDeclaredUnit>,
-    val errorReport: ErrorReport
+    val ctx: ParseContext
 ) {
     private val logger = KotlinLogging.logger("FireflyParser")
 
@@ -55,7 +55,7 @@ class FireflyParser(
                 try {
                     val toParse = receiveChannel.receive()
                     val parseJob = CoroutineScope(Dispatchers.IO).launch {
-                        parse(toParse, publishChannel, errorReport)
+                        parse(toParse, publishChannel, ctx)
                     }
                     jobs.add(parseJob)
                 } catch (e: ClosedReceiveChannelException) {
@@ -67,7 +67,8 @@ class FireflyParser(
                     break;
                 }
             }
-
+            // TODO: Call endResolution when all types are accounted.
+            ctx.resolutionTables.type.endResolution()
             for (job in jobs) {
                 job.join()
             }

@@ -28,7 +28,14 @@ package io.github.fireflylang.compiler.parser
 
 import com.github.jonathanxd.iutils.data.TypedData
 import com.github.jonathanxd.iutils.kt.require
+import com.github.jonathanxd.iutils.kt.set
+import com.github.jonathanxd.kores.MutableInstructions
+import com.github.jonathanxd.kores.Types
+import com.github.jonathanxd.kores.base.KoresModifier
+import com.github.jonathanxd.kores.base.KoresParameter
+import com.github.jonathanxd.kores.base.MethodDeclaration
 import com.github.jonathanxd.kores.type
+import com.github.jonathanxd.kores.type.typeOf
 import io.github.fireflylang.compiler.*
 import io.github.fireflylang.compiler.ast.*
 import io.github.fireflylang.compiler.errors.UnitCompilationError
@@ -44,14 +51,21 @@ import io.github.fireflylang.compiler.errors.Error
 import io.github.fireflylang.compiler.errors.ErrorReport
 import io.github.fireflylang.compiler.global.GlobalInlineFunctions
 import io.github.fireflylang.compiler.inliner.StandardFunctionInliner
+import io.github.fireflylang.compiler.resolution.ResolutionTables
+import io.github.fireflylang.compiler.resolution.TypeSignature
+import kotlinx.coroutines.runBlocking
+import java.util.concurrent.atomic.AtomicReference
 
 class FireflyLangAstTranslatorListener(
     val unit: FireflyUnit,
-    val publishChannel: SendChannel<FireflyDeclaredUnit>,
-    val errorReport: ErrorReport
+    val ctx: ParseContext,
+    val publishChannel: SendChannel<FireflyDeclaredUnit>
 ) : FireflyLangBaseListener() {
     private val logger = KotlinLogging.logger("FireflyLangListener")
     private val inliner = StandardFunctionInliner()
+    private val imports = AtomicReference(Imports())
+    private val resolutionTables get() = this.ctx.resolutionTables
+    private val errorReport get() = this.ctx.errorReport
 
     private val stack = Stack<TypedData>().also {
         it.push(TypedData())
@@ -69,6 +83,70 @@ class FireflyLangAstTranslatorListener(
 
     fun popData(): TypedData {
         return stack.pop()
+    }
+
+    override fun enterImports(ctx: FireflyLangParser.ImportsContext) {
+        val imports = ctx.importStm().map {
+            val importId = it.ID().toString()
+            val alias = it.importAlias()?.ID()
+            val sub = it.namespaceSubImport()?.subImports()?.ID().orEmpty()
+            val importType = if (sub.isNotEmpty()) ImportType.NAMESPACE else ImportType.UNIT
+            Import(importId, sub.map { it.toString() }, alias?.toString(), importType)
+        }
+
+        this.imports.set(Imports(imports))
+    }
+
+    override fun enterFnDeclaration(ctx: FireflyLangParser.FnDeclarationContext) {
+        // TODO: Local methods
+        val methods = classDec.methods as MutableList<MethodDeclaration>
+        val name = ctx.identifier().ID().toString()
+
+        val parameters = ctx.parameters()?.toParameters().orEmpty()  // TODO: Parameters
+        val returnType = Types.VOID // TODO: Return type
+        val modifiers = mutableSetOf(KoresModifier.PUBLIC)
+        methods.add(
+            MethodDeclaration.Builder.builder()
+                .modifiers(modifiers)
+                .name(name)
+                .returnType(returnType)
+                .parameters(parameters)
+                .body(MutableInstructions.create())
+                .build()
+                .also {
+                    val newData = pushData()
+                    newData[CURRENT_SOURCE] = it.body as MutableInstructions
+                }
+        )
+    }
+
+    fun FireflyLangParser.ParametersContext.toParameters(): List<KoresParameter> =
+        this.parameter().map {
+            val name = it.ID().toString()
+            val typeName = it.type()?.ID()?.toString()
+            val type =
+                if (typeName == null) AstDynamicType
+                else runBlocking {
+                    resolutionTables.type.lookupFor(typeName, TypeSignature(typeName)).also { resolved ->
+                        if (resolved == null)
+                            reportError(UnitCompilationError(
+                                unit,
+                                it,
+                                "Could not resolve the type '$typeName'",
+                                listOf("The type could not be found during the resolution step.")
+                            ))
+                    }
+                } ?: AstDynamicType
+
+            KoresParameter.Builder.builder()
+                .modifiers(KoresModifier.FINAL)
+                .name(name)
+                .type(type)
+                .build()
+        }
+
+    override fun exitFnDeclaration(ctx: FireflyLangParser.FnDeclarationContext) {
+        popData()
     }
 
     override fun enterInvokeFunc(ctx: FireflyLangParser.InvokeFuncContext) {
@@ -142,7 +220,7 @@ class FireflyLangAstTranslatorListener(
     }
 
     override fun exitUnit(ctx: FireflyLangParser.UnitContext?) {
-        CoroutineScope(Dispatchers.IO).launch {
+        runBlocking {
             publishChannel.send(FireflyDeclaredUnit(unit, classDec))
         }
     }
