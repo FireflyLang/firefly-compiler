@@ -30,10 +30,16 @@ import com.github.jonathanxd.iutils.`object`.TypedKey
 import com.github.jonathanxd.iutils.kt.typeInfo
 import com.github.jonathanxd.kores.Instruction
 import com.github.jonathanxd.kores.MutableInstructions
+import com.github.jonathanxd.kores.base.KoresParameter
 import com.github.jonathanxd.kores.base.MethodDeclaration
+import io.github.fireflylang.compiler.ast.AstParameterDefault
 
 val ENTRYPOINT_METHOD = TypedKey("ENTRYPOINT_METHOD", typeInfo<MethodDeclaration>())
+val CURRENT_METHOD = TypedKey("CURRENT_METHOD", typeInfo<MethodDeclaration>())
 val CURRENT_SOURCE = TypedKey("CURRENT_SOURCE", typeInfo<MutableInstructions>())
 val ENTRYPOINT_METHOD_SOURCE = TypedKey("ENTRYPOINT_METHOD_SOURCE", typeInfo<MutableInstructions>())
 val ARGUMENTS = TypedKey("ARGUMENTS", typeInfo<MutableList<Instruction>>())
+val PARAMETERS = TypedKey("PARAMETERS", typeInfo<MutableList<KoresParameter>>())
+val CURRENT_PARAMETER = TypedKey("CURRENT_PARAMETER", typeInfo<KoresParameter>())
+val PARAMETERS_DEFAULTS = TypedKey("PARAMETERS_DEFAULTS", typeInfo<MutableList<AstParameterDefault>>())
 val CURRENT_INSTRUCTIONS = TypedKey("CURRENT_INSTRUCTIONS", typeInfo<MutableList<Instruction>>())

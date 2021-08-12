@@ -65,6 +65,27 @@ class FireflyFnTest : FunSpec({
         hello.invoke(ins, *emptyArray())
         println("Compilation took ${Duration.between(start, end)}")
     }
+
+    test("simple fn with default param invocation") {
+        val compile = FireflyCompilationGun()
+        val start = Instant.now()
+        val result = compile.compileSingleUnit(simpleFnWithDefault)
+        val end = Instant.now()
+        save(result)
+        val loader = CodeClassLoader()
+        val clazz = loader.define(result.compilationResult)
+        println(clazz)
+        println(clazz.declaredMethods.contentToString())
+        val ep = clazz.getDeclaredMethod("entrypoint", Array<String>::class.java)
+        ep.invoke(null, arrayOf<String>())
+
+        val ctr = clazz.getDeclaredConstructor()
+        ctr.isAccessible = true
+        val ins = ctr.newInstance()
+        val hello = clazz.getDeclaredMethod("hello")
+        hello.invoke(ins, *emptyArray())
+        println("Compilation took ${Duration.between(start, end)}")
+    }
 })
 
 fun save(result: FireflyCompiledUnit) {

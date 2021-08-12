@@ -27,6 +27,7 @@
 package io.github.fireflylang.compiler.parser
 
 import com.github.jonathanxd.iutils.data.TypedData
+import com.github.jonathanxd.iutils.kt.containsKey
 import com.github.jonathanxd.iutils.kt.require
 import com.github.jonathanxd.iutils.kt.set
 import com.github.jonathanxd.kores.MutableInstructions
@@ -34,6 +35,7 @@ import com.github.jonathanxd.kores.Types
 import com.github.jonathanxd.kores.base.KoresModifier
 import com.github.jonathanxd.kores.base.KoresParameter
 import com.github.jonathanxd.kores.base.MethodDeclaration
+import com.github.jonathanxd.kores.dsl.returnValue
 import com.github.jonathanxd.kores.type
 import com.github.jonathanxd.kores.type.typeOf
 import io.github.fireflylang.compiler.*
@@ -105,19 +107,71 @@ class FireflyLangAstTranslatorListener(
         val parameters = ctx.parameters()?.toParameters().orEmpty()  // TODO: Parameters
         val returnType = Types.VOID // TODO: Return type
         val modifiers = mutableSetOf(KoresModifier.PUBLIC)
+        val parameterList = mutableListOf<KoresParameter>()
         methods.add(
             MethodDeclaration.Builder.builder()
                 .modifiers(modifiers)
                 .name(name)
                 .returnType(returnType)
-                .parameters(parameters)
+                .parameters(parameterList)
                 .body(MutableInstructions.create())
                 .build()
                 .also {
                     val newData = pushData()
+                    newData[PARAMETERS] = parameterList
+                    newData[CURRENT_METHOD] = it
                     newData[CURRENT_SOURCE] = it.body as MutableInstructions
                 }
         )
+    }
+
+    override fun enterParameter(ctx: FireflyLangParser.ParameterContext) {
+        val name = ctx.ID().toString()
+        val typeName = ctx.type()?.ID()?.toString()
+        val type =
+            if (typeName == null) AstDynamicType
+            else runBlocking {
+                resolutionTables.type.lookupFor(typeName, TypeSignature(typeName)).also { resolved ->
+                    if (resolved == null)
+                        reportError(UnitCompilationError(
+                            unit,
+                            ctx,
+                            "Could not resolve the type '$typeName'",
+                            listOf("The type could not be found during the resolution step.")
+                        ))
+                }
+            } ?: AstDynamicType
+
+        val parameter = KoresParameter.Builder.builder()
+            .modifiers(KoresModifier.FINAL)
+            .name(name)
+            .type(type)
+            .build()
+
+        PARAMETERS.require(this.currentData()).add(parameter)
+
+        if (ctx.expression() != null) {
+            val current = currentData()
+            if (!current.containsKey(PARAMETERS_DEFAULTS)) {
+                current[PARAMETERS_DEFAULTS] = mutableListOf()
+            }
+            val newData = pushData()
+            newData[CURRENT_PARAMETER] = parameter
+            newData[CURRENT_INSTRUCTIONS] = mutableListOf()
+        }
+
+    }
+
+    override fun exitParameter(ctx: FireflyLangParser.ParameterContext) {
+
+        if (ctx.expression() != null) {
+            val parameterData = popData()
+            val parameter = CURRENT_PARAMETER.require(parameterData)
+            val insns = CURRENT_INSTRUCTIONS.require(parameterData)
+
+            PARAMETERS_DEFAULTS.require(currentData())
+                .add(AstParameterDefault(parameter, insns))
+        }
     }
 
     fun FireflyLangParser.ParametersContext.toParameters(): List<KoresParameter> =
@@ -146,7 +200,24 @@ class FireflyLangAstTranslatorListener(
         }
 
     override fun exitFnDeclaration(ctx: FireflyLangParser.FnDeclarationContext) {
-        popData()
+        val data = popData()
+        val method = CURRENT_METHOD.require(data)
+        val parameterDefaults = PARAMETERS_DEFAULTS.getOrElse(data, mutableListOf())
+        val methods = classDec.methods as MutableList<MethodDeclaration>
+
+        methods.addAll(parameterDefaults.map {
+            val parameterDefaultMethodName = "${method.name}$${it.parameter.name}\$default"
+            MethodDeclaration.Builder.builder()
+                .modifiers(KoresModifier.PUBLIC)
+                .name(parameterDefaultMethodName)
+                .returnType(it.parameter.type)
+                .parameters(mutableListOf()) // TODO: fn ex(a: Int, b: Int = a + 1) add `a` as parameter of default method
+                .body(MutableInstructions.create(listOf(
+                    returnValue(it.parameter.type, it.defaults.single())
+                )))
+                .build()
+        })
+        println(data)
     }
 
     override fun enterInvokeFunc(ctx: FireflyLangParser.InvokeFuncContext) {

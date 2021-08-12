@@ -29,3 +29,26 @@ val simpleFn =
         }
     )
 
+val simpleFnWithDefault =
+    createUnit(
+        fileName = "SimpleFn.firefly",
+        contentStream = {
+            CharStreams.fromString(
+                """
+                fn hello() {
+                    println("Hello world")
+                }
+                fn greet(text: String) {
+                    println("Hello world")
+                }
+                fn greet2(text: java.lang.String = "Hello world") {
+                    println("Hello world")
+                }
+                fn greet3(text: `java.lang.String:a`) {
+                    println("Hello world")
+                }
+            """.trimIndent()
+            )
+        }
+    )
+
